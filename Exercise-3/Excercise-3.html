@@ -1,0 +1,213 @@
+<!-- 
+    Buatlah sebuah halaman dengan kriteria sebagai berikut:
+    - Buatlah table dengan data dari Swapi.co
+    - Tambah field untuk filtering data dari table tersebut
+ -->
+
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+     
+     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+     integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+     <!-- Style untuk Sorting -->
+     <style>
+         th.asc::before{
+             border-bottom-color: azure;
+         }
+         th.desc::after {
+             border-top-color: aquamarine;
+         }
+         th::after, th::before{
+             content: '';
+             display: block;
+             right: 0;
+             border-color: transparent;
+             border-style: solid;
+             border-width: 10px;
+             width: 0;
+             height: 0;
+         }
+     </style>
+
+     <title>Exercise-3 || JSDC-B18</title>
+
+ </head>
+ <body>
+     <div class="container">
+         <form>
+            <div class="form-group">
+                <label for="search-entry">Pencarian</label>
+                <input type="text" class="form-control" id="search" aria-describedby="emailHelp" placeholder="Ketik Disini">
+            </div>
+        </form>
+        <div class="text-center font-weight-bolder">
+            <caption><u>List Of Vehicles</u></caption>             
+        </div>
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th scope="col"> No.</th>
+                        <th scope="col"> Name</th>
+                        <th scope="col"> Model Vehicles</th>
+                        <th scope="col"> Manufacturer Of</th>
+                        <th scope="col"> Cost</th>
+                        <th scope="col"> Length</th>
+                        <th scope="col"> Max Speed</th>
+                        <th scope="col"> Crew</th>
+                        <th scope="col"> Passengers Capacity</th>
+                        <th scope="col"> Cargo Capacity</th>
+                        <th scope="col"> Consumables</th>
+                        <th scope="col"> Vehicles Class</th>
+                    </tr>
+                    <tbody>
+
+                    </tbody>
+                </thead>
+            </table>
+     </div>
+
+    <script>
+        // Fungsi untuk Get data dari URL 
+        async function getData(url){
+            const response     = await fetch(url)
+            const responseBody = await response.json()
+            return responseBody
+        }
+
+        // Fungsi Validasi Get data dari swapi.co
+        let vehicleArray = []
+        async function getVehicle(){
+            try {
+                let nextResponse   = null
+                const response     = await getData(`https://swapi.co/api/vehicles`)
+                vehicleArray       = vehicleArray.concat(response.results)
+                    while (vehicleArray.length < response.count){
+                        const nextUrl = nextResponse ? nextResponse.next : response.next
+                            if (nextUrl !== null){
+                                nextResponse  = await getData(nextUrl)
+                                vehicleArray  = vehicleArray.concat(nextResponse.results)
+                            }
+                    } return vehicleArray
+            }   catch (error){
+                console.log(error)
+            }          
+        }
+
+        // Fungsi tampilkan data pada Table HTML
+        function insertIntoHTML (vehicles){
+            let htmlString = ''
+            for (let index = 0; index < vehicles.length; index++){
+                const detail = vehicles[index]
+                htmlString +=`
+                    <tr>
+                        <th>${index + 1}</th>
+                        <td>${detail.name}</td>
+                        <td>${detail.model}</td>
+                        <td>${detail.manufacturer}</td>
+                        <td>${detail.cost_in_credits}</td>
+                        <td>${detail.length}</td>
+                        <td>${detail.max_atmosphering_speed}</td>
+                        <td>${detail.crew}</td>
+                        <td>${detail.passengers}</td>
+                        <td>${detail.cargo_capacity}</td>
+                        <td>${detail.consumables}</td>
+                        <td>${detail.vehicle_class}</td>
+                    </tr>
+                `
+            } document.querySelector('tbody').insertAdjacentHTML('beforeend', htmlString)
+        }
+        
+        // Fungsi untuk searching pada element input
+        function handleInputEmail (event){
+            const inputValue = event.target.value
+            const trElement  = document.querySelectorAll('tbody tr')
+            for (let index=0; index<trElement.length; index++){
+                const element   = trElement[index];
+                let displayRow  = false
+                const tdElement = element.querySelectorAll('td')
+                for (let index=0; index<tdElement.length; index++){
+                    const element = tdElement[index].innerText;
+                    displayRow = displayRow || element.toLowerCase().includes(inputValue.toLowerCase())
+                }
+                trElement[index].classList.toggle('d-none',!displayRow)               
+            }
+        }
+        
+        // Fungsi untuk searching pada element input
+        async function init(){
+            const vehicle = await getVehicle()
+            insertIntoHTML(vehicle)
+        }
+        init()
+        document.getElementById('search').addEventListener('input', handleInputEmail)
+    
+        // Fungsu untuk Sorting data pada table
+        function sorting(){
+            var LightTableSorter = (function(Arr){
+                var _th, _cellIndex, _order = '';
+                function _text(row) {
+                    return row.cells.item(_cellIndex).textContent.toLowerCase();
+                }
+
+                function _sort(a, b) {
+                    var va = _text(a), vb = _text(b), n = parseInt(va, 10);
+                    if (n) {
+                        va = n;
+                        vb = parseInt(vb, 10);
+                    }
+                    return va > vb ? 1 : va < vb ? -1 : 0;
+                }
+
+                function _toggle() {
+                    var c = _order !== 'asc' ? 'asc' : 'desc';
+                    _th.className = (_th.className.replace(_order, '') + ' ' + c).trim();
+                    _order = c;
+                }
+
+                function _reset() {
+                    _th.className = _th.className.replace('asc', '').replace('desc', '');
+                    _order = '';
+                }
+
+                function onClickEvent(e) {
+                    if (_th && _cellIndex !== e.target.cellIndex) {
+                        _reset();
+                    }
+                    _th = e.target;
+                    _cellIndex = _th.cellIndex;
+                    var tbody = _th.offsetParent.getElementsByTagName('tbody')[0],
+                        rows = tbody.rows;
+                    if (rows) {
+                        rows = Arr.sort.call(Arr.slice.call(rows, 0), _sort);
+                        if (_order === 'asc') {
+                            Arr.reverse.call(rows);
+                        }
+                        _toggle();
+                        tbody.innerHtml = '';
+                        Arr.forEach.call(rows, function(row) { tbody.appendChild(row); });
+                    }
+                }
+
+                return {
+                    init: function() {
+                        var ths = document.getElementsByTagName('th');
+                        Arr.forEach.call(ths, function(th) { th.onclick = onClickEvent; });
+                    }
+                };
+            })(Array.prototype);
+
+            document.addEventListener('readystatechange', function() {
+                if (document.readyState === 'complete') {
+                    LightTableSorter.init();
+                }
+            });
+        }
+        sorting()
+    </script>
+ </body>
+ </html>
